@@ -429,18 +429,6 @@
             // State
             let currentState = 'combined'; // combined or sections
             
-            // Check if we're returning from a section tab
-            // Using sessionStorage to track if user was logged in
-            if (sessionStorage.getItem('lfjc_logged_in') === 'true') {
-                // User was logged in before, show sections page
-                switchScreen(mainInterface);
-                currentState = 'sections';
-            } else {
-                // First time or fresh load, show password
-                switchScreen(combinedScreen);
-                currentState = 'combined';
-            }
-            
             // Security: Disable right-click
             document.addEventListener('contextmenu', e => e.preventDefault());
             
@@ -500,9 +488,6 @@
                 
                 // Hardcoded password: lfjc2025
                 if (pwd === 'lfjc2025') {
-                    // Save login state
-                    sessionStorage.setItem('lfjc_logged_in', 'true');
-                    
                     // Go to sections screen
                     switchScreen(mainInterface);
                     currentState = 'sections';
@@ -522,7 +507,7 @@
             });
             
             // ========== SECTION BUTTONS ==========
-            // When clicked: opens URL in new tab, main page stays but hides
+            // When clicked: opens URL in new tab AND closes this window/tab
             document.querySelectorAll('.section-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const section = this.dataset.section;
@@ -542,36 +527,44 @@
                         // Open URL in new tab
                         window.open(url, '_blank');
                         
-                        // DON'T close the main page, just minimize/hide it
-                        // For better UX, we can minimize the window if possible
+                        // Close the current window/tab
+                        // Using multiple methods for better compatibility
                         try {
-                            // Try to blur the window (send to background)
-                            window.blur();
+                            // Method 1: Try to close the current window
+                            window.close();
+                        } catch(e) {
+                            console.log('Window close error:', e);
+                        }
+                        
+                        // Method 2: If window.close fails, try to redirect to about:blank and then close
+                        try {
+                            window.location.href = 'about:blank';
+                        } catch(e) {
+                            console.log('Redirect error:', e);
+                        }
+                        
+                        // Method 3: As last resort, try to exit fullscreen and hide content
+                        try {
+                            if (document.exitFullscreen) {
+                                document.exitFullscreen();
+                            }
                         } catch(e) {}
                         
-                        // Reset button style
-                        this.style.transform = '';
-                        this.style.opacity = '';
+                        // Method 4: Try to close via window top
+                        try {
+                            window.top.close();
+                        } catch(e) {}
+                        
+                        // Method 5: For some browsers, opening a blank window and closing helps
+                        try {
+                            const blank = window.open('', '_blank');
+                            if (blank) blank.close();
+                        } catch(e) {}
+                        
+                        // If none work, at least the new tab is open
                     }, 150);
                 });
             });
-            
-            // ========== BACK BUTTON / POPSTATE HANDLING ==========
-            // Handle browser back button
-            window.addEventListener('popstate', function(event) {
-                if (currentState === 'sections') {
-                    // If on sections page and back pressed, go to password
-                    switchScreen(combinedScreen);
-                    currentState = 'combined';
-                    passwordInput.value = '';
-                    focusPassword();
-                    // Clear login state
-                    sessionStorage.removeItem('lfjc_logged_in');
-                }
-            });
-            
-            // Push initial state for back button handling
-            window.history.pushState({page: 'main'}, 'main', window.location.href);
             
             // ========== ESC KEY HANDLING ==========
             document.addEventListener('keydown', e => {
@@ -584,32 +577,13 @@
                     currentState = 'combined';
                     passwordInput.value = '';
                     focusPassword();
-                    // Clear login state
-                    sessionStorage.removeItem('lfjc_logged_in');
-                }
-            });
-            
-            // ========== VISIBILITY CHANGE ==========
-            // Detect when user comes back to this tab
-            document.addEventListener('visibilitychange', function() {
-                if (document.visibilityState === 'visible') {
-                    // User came back to this tab
-                    // Check if they were logged in before
-                    if (sessionStorage.getItem('lfjc_logged_in') === 'true') {
-                        switchScreen(mainInterface);
-                        currentState = 'sections';
-                    } else {
-                        switchScreen(combinedScreen);
-                        currentState = 'combined';
-                        focusPassword();
-                    }
                 }
             });
             
             // ========== FULLSCREEN ==========
             window.addEventListener('load', () => {
                 enterFullscreen();
-                if (currentState === 'combined') focusPassword();
+                focusPassword();
             });
             
             document.addEventListener('click', () => {
