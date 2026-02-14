@@ -8,6 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
+        /* Your existing styles remain exactly the same */
         * {
             margin: 0;
             padding: 0;
@@ -390,7 +391,7 @@
         </div>
     </div>
     
-    <!-- SCREEN 2: Main Interface - Sections with your URLs -->
+    <!-- SCREEN 2: Main Interface - Sections (URLs will be loaded from environment variables) -->
     <div id="mainInterface" class="main-interface screen">
         <div class="page-header">
             <div class="header-text">LFJC ONLINE EXAMINATION</div>
@@ -399,16 +400,16 @@
         <div class="sections-overlay">
             <div class="columns-container">
                 <div class="column">
-                    <button class="section-btn" data-section="1D" data-url="https://1d-ana.pages.dev/">1D</button>
-                    <button class="section-btn" data-section="1M" data-url="https://1m-6q3.pages.dev/">1M</button>
-                    <button class="section-btn" data-section="1N" data-url="https://1n-sep.pages.dev/">1N</button>
-                    <button class="section-btn" data-section="1E" data-url="https://1e.pages.dev/">1E</button>
+                    <button class="section-btn" data-section="1D">1D</button>
+                    <button class="section-btn" data-section="1M">1M</button>
+                    <button class="section-btn" data-section="1N">1N</button>
+                    <button class="section-btn" data-section="1E">1E</button>
                 </div>
                 <div class="column">
-                    <button class="section-btn" data-section="2D" data-url="https://2d-e7t.pages.dev/">2D</button>
-                    <button class="section-btn" data-section="2M" data-url="https://2m-35y.pages.dev/">2M</button>
-                    <button class="section-btn" data-section="2N" data-url="https://2n.pages.dev/">2N</button>
-                    <button class="section-btn" data-section="2E" data-url="https://2e.pages.dev/">2E</button>
+                    <button class="section-btn" data-section="2D">2D</button>
+                    <button class="section-btn" data-section="2M">2M</button>
+                    <button class="section-btn" data-section="2N">2N</button>
+                    <button class="section-btn" data-section="2E">2E</button>
                 </div>
             </div>
         </div>
@@ -428,6 +429,19 @@
             
             // State
             let currentState = 'combined'; // combined or sections
+            
+            // ========== LOAD ENVIRONMENT VARIABLES ==========
+            // This will be populated by Cloudflare Pages at build time
+            const SECTION_URLS = {
+                '1D': '%%SECTION_1D_URL%%',
+                '1M': '%%SECTION_1M_URL%%',
+                '1N': '%%SECTION_1N_URL%%',
+                '1E': '%%SECTION_1E_URL%%',
+                '2D': '%%SECTION_2D_URL%%',
+                '2M': '%%SECTION_2M_URL%%',
+                '2N': '%%SECTION_2N_URL%%',
+                '2E': '%%SECTION_2E_URL%%'
+            };
             
             // Security: Disable right-click
             document.addEventListener('contextmenu', e => e.preventDefault());
@@ -511,10 +525,10 @@
             document.querySelectorAll('.section-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const section = this.dataset.section;
-                    const url = this.dataset.url;
+                    const url = SECTION_URLS[section];
                     
-                    if (!url) {
-                        alert('Section URL not configured');
+                    if (!url || url.startsWith('%%')) {
+                        alert(`URL for section ${section} is not configured. Please set up environment variables in Cloudflare Pages.`);
                         return;
                     }
                     
